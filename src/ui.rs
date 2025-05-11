@@ -21,22 +21,30 @@ pub fn draw_ui<B: Backend>(
         .split(f.area());
 
     let area = chunks[0];
+    let total = commits.len();
     let visible_height = area.height.saturating_sub(2) as usize; // 2 for top/bottom border
 
-    let end = (scroll_offset + visible_height).min(commits.len());
-    let start = if commits.len() >= visible_height {
-        commits.len().saturating_sub(visible_height).min(scroll_offset)
-    } else {
-        0
-    };
-    let visible_commits = &commits[start..end];
+    // Clamp scroll_offset so that the window doesn't go out of bounds
+    let max_scroll = total.saturating_sub(visible_height);
+    let scroll_offset = scroll_offset.min(max_scroll);
 
+    // Always show the selected commit
+    let scroll_offset = if selected < scroll_offset {
+        selected
+    } else if selected >= scroll_offset + visible_height {
+        selected + 1 - visible_height
+    } else {
+        scroll_offset
+    };
+
+    let end = (scroll_offset + visible_height).min(total);
+    let visible_commits = &commits[scroll_offset..end];
 
     let items: Vec<ListItem> = visible_commits
         .iter()
         .enumerate()
         .map(|(i, (hash, msg, branches))| {
-            let absolute_index = start + i;
+            let absolute_index = scroll_offset + i;
 
             let graph_line = if absolute_index == 0 { "*─" } else { "│ " };
             let graph_span = Span::styled(graph_line, Style::default().fg(Color::Cyan));
