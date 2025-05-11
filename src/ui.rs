@@ -7,6 +7,14 @@ use ratatui::{
     text::{Line, Span},
 };
 
+pub struct CommitInfo {
+    pub hash: String,
+    pub message: String,
+    pub branches: Vec<String>,
+    pub author: String,
+    pub date: String,
+}
+
 pub fn draw_ui<B: Backend>(
     f: &mut Frame,
     commits: &[(String, String, Vec<String>)],
@@ -46,27 +54,47 @@ pub fn draw_ui<B: Backend>(
         .map(|(i, (hash, msg, branches))| {
             let absolute_index = scroll_offset + i;
 
-            let graph_line = if absolute_index == 0 { "*─" } else { "│ " };
+            // Example graph line (for demo, you can improve this logic)
+            let graph_line = if absolute_index == 0 {
+                "*─"
+            } else if absolute_index % 2 == 0 {
+                "│ "
+            } else {
+                "╰─"
+            };
             let graph_span = Span::styled(graph_line, Style::default().fg(Color::Cyan));
-            let hash_span = Span::styled(format!("{} ", hash), Style::default().add_modifier(Modifier::BOLD));
-            let msg_span = Span::raw(msg.clone());
 
-            let branch_span = if !branches.is_empty() {
+            // Branch labels
+            let branch_labels = if !branches.is_empty() {
                 let joined = branches.iter().map(|b| format!("[{}]", b)).collect::<Vec<_>>().join(" ");
-                Span::styled(format!("  {}", joined), Style::default().fg(Color::LightMagenta))
+                Span::styled(joined, Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD))
             } else {
                 Span::raw("")
             };
 
-            let mut item = ListItem::new(Line::from(vec![
-                graph_span,
-                hash_span,
-                msg_span,
-                branch_span,
-            ]));
+            // Short hash styled bold cyan
+            let hash_span = Span::styled(
+                format!("{}", hash),
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            );
 
+            // Commit message
+            let msg_span = Span::styled(msg.clone(), Style::default().fg(Color::White));
+
+            // Compose the advanced row
+            let line = Line::from(vec![
+                graph_span,
+                Span::raw(" "),
+                branch_labels,
+                Span::raw(" "),
+                hash_span,
+                Span::raw(" "),
+                msg_span,
+            ]);
+
+            let mut item = ListItem::new(line);
             if absolute_index == selected {
-                item = item.style(Style::default().bg(Color::Blue));
+                item = item.style(Style::default().bg(Color::Cyan).fg(Color::Black));
             }
 
             item
