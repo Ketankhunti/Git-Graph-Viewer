@@ -9,6 +9,8 @@ use crossterm::{
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 
+
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let commits = repo::get_commits()?; // Get commit list
 
